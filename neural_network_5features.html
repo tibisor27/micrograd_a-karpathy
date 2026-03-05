@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rețea Neuronală - 5 Features Input</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a1a;
+            color: #e0e0f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(120, 80, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 100, 200, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(80, 200, 255, 0.06) 0%, transparent 50%);
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #7c5cff, #ff6ec7, #50c8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1rem;
+            color: #8888aa;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+
+        /* Info Cards */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            border-color: rgba(124, 92, 255, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(124, 92, 255, 0.15);
+        }
+
+        .info-card .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #7777aa;
+            margin-bottom: 8px;
+        }
+
+        .info-card .value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #7c5cff, #ff6ec7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .info-card .detail {
+            font-size: 0.8rem;
+            color: #6666aa;
+            margin-top: 5px;
+        }
+
+        /* Canvas area */
+        .canvas-wrapper {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-wrapper::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px;
+            right: -1px; bottom: -1px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(124, 92, 255, 0.2), transparent, rgba(255, 110, 199, 0.2));
+            z-index: -1;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            border-radius: 12px;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: 1px solid rgba(124, 92, 255, 0.3);
+            background: rgba(124, 92, 255, 0.1);
+            color: #c0b0ff;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.3px;
+        }
+
+        .btn:hover {
+            background: rgba(124, 92, 255, 0.25);
+            border-color: rgba(124, 92, 255, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(124, 92, 255, 0.2);
+        }
+
+        .btn.active {
+            background: linear-gradient(135deg, rgba(124, 92, 255, 0.4), rgba(255, 110, 199, 0.3));
+            border-color: rgba(124, 92, 255, 0.7);
+            color: #fff;
+        }
+
+        /* Legend */
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .legend-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 18px 22px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .legend-item:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .legend-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 2px;
+            box-shadow: 0 0 12px currentColor;
+        }
+
+        .legend-text h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .legend-text p {
+            font-size: 0.78rem;
+            color: #7777aa;
+            line-height: 1.5;
+        }
+
+        /* Formula section */
+        .formula-section {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .formula-section h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #7c5cff, #50c8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: #c0c0ff;
+            overflow-x: auto;
+        }
+
+        .formula span.highlight {
+            color: #ff6ec7;
+            font-weight: 700;
+        }
+
+        .formula span.blue {
+            color: #50c8ff;
+            font-weight: 700;
+        }
+
+        .formula span.green {
+            color: #50ffb0;
+            font-weight: 700;
+        }
+
+        /* Param breakdown */
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .param-table th, .param-table td {
+            padding: 10px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 0.85rem;
+        }
+
+        .param-table th {
+            color: #7777aa;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+        }
+
+        .param-table td:last-child {
+            text-align: right;
+            font-weight: 700;
+            color: #c0b0ff;
+        }
+
+        .param-table tr:hover td {
+            background: rgba(124, 92, 255, 0.05);
+        }
+
+        .total-row td {
+            border-top: 2px solid rgba(124, 92, 255, 0.3);
+            font-weight: 800 !important;
+            font-size: 1rem !important;
+            color: #ff6ec7 !important;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.6rem; }
+            .info-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="container">
+        <h1>🧠 Rețea Neuronală cu 5 Features</h1>
+        <p class="subtitle">Vizualizare animată a arhitecturii MLP — Makemore (Karpathy)</p>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="label">Input Features</div>
+                <div class="value">5</div>
+                <div class="detail">x₁, x₂, x₃, x₄, x₅</div>
+            </div>
+            <div class="info-card">
+                <div class="label">Hidden Layer</div>
+                <div class="value">200</div>
+                <div class="detail">neuroni cu tanh</div>
+            </div>
+            <div class="info-card">
+                <div class="label">Output Layer</div>
+                <div class="value">27</div>
+                <div class="detail">caractere (vocab)</div>
+            </div>
+            <div class="info-card">
+                <div class="label">Total Noduri</div>
+                <div class="value">232</div>
+                <div class="detail">5 + 200 + 27</div>
+            </div>
+            <div class="info-card">
+                <div class="label">Parametri</div>
+                <div class="value">6,627</div>
+                <div class="detail">weights + biases</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn active" onclick="toggleAnimation(this, 'flow')">🌊 Data Flow</button>
+            <button class="btn" onclick="toggleAnimation(this, 'pulse')">💓 Pulse</button>
+            <button class="btn" onclick="toggleAnimation(this, 'both')">✨ Ambele</button>
+            <button class="btn" onclick="highlightPath()">🔦 Evidențiază Cale</button>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="nnCanvas"></canvas>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #7c5cff; color: #7c5cff;"></div>
+                <div class="legend-text">
+                    <h3>Input Layer (5 noduri)</h3>
+                    <p>Fiecare nod = o feature de intrare. Dacă ai block_size=5 cu n_embed=1, sau 5 features numerice directe.</p>
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #ff6ec7; color: #ff6ec7;"></div>
+                <div class="legend-text">
+                    <h3>Hidden Layer (200 noduri)</h3>
+                    <p>Neuronii ascunși cu activare tanh(). Fiecare primește input de la TOATE cele 5 noduri — fully connected.</p>
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #50c8ff; color: #50c8ff;"></div>
+                <div class="legend-text">
+                    <h3>Output Layer (27 noduri)</h3>
+                    <p>Un nod per caracter din vocabular (a-z + '.'). Softmax convertește în probabilități.</p>
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #50ffb0; color: #50ffb0;"></div>
+                <div class="legend-text">
+                    <h3>Conexiuni (Weights)</h3>
+                    <p>Linii = weights. Input→Hidden: 5×200 = 1000. Hidden→Output: 200×27 = 5400. Total weights: 6400.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="formula-section">
+            <h2>📐 Calculul Matematic (Forward Pass)</h2>
+            
+            <div class="formula">
+                <span class="highlight">h</span> = tanh(<span class="blue">X</span> @ <span class="green">W1</span> + <span class="green">b1</span>)
+                &nbsp;&nbsp;&nbsp;→ shape: (batch, <span class="highlight">200</span>)
+            </div>
+            <div class="formula">
+                <span class="highlight">logits</span> = <span class="highlight">h</span> @ <span class="green">W2</span> + <span class="green">b2</span>
+                &nbsp;&nbsp;&nbsp;→ shape: (batch, <span class="blue">27</span>)
+            </div>
+            <div class="formula">
+                <span class="highlight">probs</span> = softmax(<span class="highlight">logits</span>)
+                &nbsp;&nbsp;&nbsp;→ probabilitate per caracter
+            </div>
+
+            <h2 style="margin-top: 24px;">📊 Detalii Parametri</h2>
+            <table class="param-table">
+                <thead>
+                    <tr>
+                        <th>Parametru</th>
+                        <th>Shape</th>
+                        <th>Nr. Parametri</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>W1 (Input → Hidden)</td>
+                        <td>(5, 200)</td>
+                        <td>1,000</td>
+                    </tr>
+                    <tr>
+                        <td>b1 (Hidden bias)</td>
+                        <td>(200,)</td>
+                        <td>200</td>
+                    </tr>
+                    <tr>
+                        <td>W2 (Hidden → Output)</td>
+                        <td>(200, 27)</td>
+                        <td>5,400</td>
+                    </tr>
+                    <tr>
+                        <td>b2 (Output bias)</td>
+                        <td>(27,)</td>
+                        <td>27</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>TOTAL</td>
+                        <td>—</td>
+                        <td>6,627</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('nnCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // High DPI support
+        const dpr = window.devicePixelRatio || 1;
+        
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = (rect.width - 40) * dpr;
+            canvas.height = 600 * dpr;
+            canvas.style.height = '600px';
+            ctx.scale(dpr, dpr);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            initNodes();
+        });
+
+        // Network config
+        const layers = [
+            { name: 'Input', count: 5, color: '#7c5cff', glowColor: 'rgba(124, 92, 255, 0.4)' },
+            { name: 'Hidden', count: 200, color: '#ff6ec7', glowColor: 'rgba(255, 110, 199, 0.3)', showCount: 12 },
+            { name: 'Output', count: 27, color: '#50c8ff', glowColor: 'rgba(80, 200, 255, 0.4)', showCount: 15 }
+        ];
+
+        let nodes = [];
+        let animMode = 'flow';
+        let time = 0;
+        let highlightedPath = null;
+        let highlightTimer = 0;
+
+        // Particles for data flow
+        let particles = [];
+
+        function initNodes() {
+            nodes = [];
+            const w = canvas.width / dpr;
+            const h = canvas.height / dpr;
+            const layerSpacing = w / (layers.length + 1);
+
+            layers.forEach((layer, li) => {
+                const x = layerSpacing * (li + 1);
+                const displayCount = layer.showCount || layer.count;
+                const nodeSpacing = (h - 80) / (displayCount + 1);
+                const layerNodes = [];
+
+                for (let ni = 0; ni < displayCount; ni++) {
+                    const y = 40 + nodeSpacing * (ni + 1);
+                    
+                    // Add gap indicators for condensed layers
+                    let isGap = false;
+                    let actualIndex = ni;
+                    if (layer.showCount && layer.count > layer.showCount) {
+                        const half = Math.floor(layer.showCount / 2);
+                        if (ni === half) {
+                            isGap = true;
+                        } else if (ni > half) {
+                            actualIndex = layer.count - (displayCount - ni);
+                        }
+                    }
+
+                    layerNodes.push({
+                        x, y,
+                        radius: li === 0 ? 14 : (li === 2 ? 10 : 6),
+                        color: layer.color,
+                        glowColor: layer.glowColor,
+                        isGap,
+                        actualIndex,
+                        layerIndex: li,
+                        pulsePhase: Math.random() * Math.PI * 2,
+                        label: isGap ? '...' : (li === 0 ? `x${actualIndex + 1}` : (li === 2 ? String.fromCharCode(actualIndex === 0 ? 46 : 96 + actualIndex) : ''))
+                    });
+                }
+                nodes.push(layerNodes);
+            });
+        }
+
+        function createParticle(fromNode, toNode) {
+            return {
+                x: fromNode.x,
+                y: fromNode.y,
+                targetX: toNode.x,
+                targetY: toNode.y,
+                progress: 0,
+                speed: 0.008 + Math.random() * 0.012,
+                color: fromNode.color,
+                size: 2 + Math.random() * 2,
+                opacity: 0.6 + Math.random() * 0.4
+            };
+        }
+
+        function spawnParticles() {
+            if (particles.length > 200) return;
+            
+            for (let li = 0; li < nodes.length - 1; li++) {
+                const fromLayer = nodes[li].filter(n => !n.isGap);
+                const toLayer = nodes[li + 1].filter(n => !n.isGap);
+                
+                if (Math.random() < 0.3) {
+                    const from = fromLayer[Math.floor(Math.random() * fromLayer.length)];
+                    const to = toLayer[Math.floor(Math.random() * toLayer.length)];
+                    particles.push(createParticle(from, to));
+                }
+            }
+        }
+
+        function drawConnections() {
+            for (let li = 0; li < nodes.length - 1; li++) {
+                const fromLayer = nodes[li].filter(n => !n.isGap);
+                const toLayer = nodes[li + 1].filter(n => !n.isGap);
+
+                fromLayer.forEach(from => {
+                    toLayer.forEach(to => {
+                        const isHighlighted = highlightedPath && 
+                            highlightedPath.some(p => p.from === from && p.to === to);
+
+                        ctx.beginPath();
+                        ctx.moveTo(from.x, from.y);
+                        ctx.lineTo(to.x, to.y);
+                        
+                        if (isHighlighted) {
+                            const alpha = 0.4 + 0.3 * Math.sin(time * 3);
+                            ctx.strokeStyle = `rgba(80, 255, 176, ${alpha})`;
+                            ctx.lineWidth = 2.5;
+                        } else {
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                            ctx.lineWidth = 0.5;
+                        }
+                        ctx.stroke();
+                    });
+                });
+            }
+        }
+
+        function drawParticles() {
+            particles.forEach((p, i) => {
+                p.progress += p.speed;
+                
+                if (p.progress >= 1) {
+                    particles.splice(i, 1);
+                    return;
+                }
+
+                // Easing
+                const t = p.progress;
+                const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                
+                p.x = p.x + (p.targetX - (p.x)) * 0.05;
+                p.y = p.y + (p.targetY - (p.y)) * 0.05;
+
+                const currentX = (1 - ease) * (p.targetX - (p.targetX - p.x) / (1 - t + 0.001)) + ease * p.targetX;
+                const drawX = lerp(p.x, p.targetX, ease);
+                const drawY = lerp(p.y, p.targetY, ease);
+
+                // Glow
+                const gradient = ctx.createRadialGradient(drawX, drawY, 0, drawX, drawY, p.size * 4);
+                gradient.addColorStop(0, p.color + Math.floor(p.opacity * 180).toString(16).padStart(2, '0'));
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(drawX - p.size * 4, drawY - p.size * 4, p.size * 8, p.size * 8);
+
+                // Core
+                ctx.beginPath();
+                ctx.arc(drawX, drawY, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.opacity;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        function drawNodes() {
+            nodes.forEach((layer, li) => {
+                layer.forEach(node => {
+                    if (node.isGap) {
+                        // Draw dots for gap
+                        ctx.fillStyle = node.color;
+                        ctx.globalAlpha = 0.5;
+                        ctx.font = 'bold 20px Inter';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('⋮', node.x, node.y);
+                        ctx.globalAlpha = 1;
+
+                        // Label showing count
+                        if (li === 1) {
+                            ctx.font = '600 11px Inter';
+                            ctx.fillStyle = 'rgba(255, 110, 199, 0.6)';
+                            ctx.fillText(`${layers[li].count} total`, node.x, node.y + 20);
+                        }
+                        return;
+                    }
+
+                    const pulseScale = animMode === 'pulse' || animMode === 'both' 
+                        ? 1 + 0.15 * Math.sin(time * 2 + node.pulsePhase) 
+                        : 1;
+                    const r = node.radius * pulseScale;
+
+                    // Outer glow
+                    const glowR = r * 3;
+                    const gradient = ctx.createRadialGradient(node.x, node.y, r * 0.5, node.x, node.y, glowR);
+                    gradient.addColorStop(0, node.glowColor);
+                    gradient.addColorStop(1, 'transparent');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(node.x - glowR, node.y - glowR, glowR * 2, glowR * 2);
+
+                    // Node circle
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+                    
+                    const nodeGrad = ctx.createRadialGradient(
+                        node.x - r * 0.3, node.y - r * 0.3, 0,
+                        node.x, node.y, r
+                    );
+                    nodeGrad.addColorStop(0, lighten(node.color, 40));
+                    nodeGrad.addColorStop(1, node.color);
+                    ctx.fillStyle = nodeGrad;
+                    ctx.fill();
+
+                    // Border
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    // Labels for input and output nodes
+                    if (node.label && !node.isGap) {
+                        ctx.font = `${li === 0 ? '600 11' : '500 9'}px Inter`;
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        
+                        if (li === 0) {
+                            ctx.fillText(node.label, node.x - 30, node.y);
+                        } else if (li === 2) {
+                            ctx.fillText(node.label, node.x + 24, node.y);
+                        }
+                    }
+                });
+
+                // Layer labels
+                const layerX = layer[0].x;
+                ctx.font = '700 13px Inter';
+                ctx.fillStyle = layers[li].color;
+                ctx.textAlign = 'center';
+                ctx.fillText(layers[li].name + ' Layer', layerX, 22);
+                ctx.font = '600 11px Inter';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.fillText(`(${layers[li].count} noduri)`, layerX, 38);
+            });
+        }
+
+        function lighten(hex, amount) {
+            const num = parseInt(hex.slice(1), 16);
+            const r = Math.min(255, (num >> 16) + amount);
+            const g = Math.min(255, ((num >> 8) & 0x00FF) + amount);
+            const b = Math.min(255, (num & 0x0000FF) + amount);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function drawActivationLabels() {
+            const w = canvas.width / dpr;
+            const h = canvas.height / dpr;
+            
+            // Between input and hidden
+            const x1 = (nodes[0][0].x + nodes[1][0].x) / 2;
+            ctx.save();
+            ctx.font = '600 12px Inter';
+            ctx.fillStyle = 'rgba(80, 255, 176, 0.6)';
+            ctx.textAlign = 'center';
+            ctx.fillText('W1 @ + b1', x1, h - 25);
+            ctx.font = '500 10px Inter';
+            ctx.fillStyle = 'rgba(80, 255, 176, 0.4)';
+            ctx.fillText('→ tanh()', x1, h - 10);
+            ctx.restore();
+
+            // Between hidden and output
+            const x2 = (nodes[1][0].x + nodes[2][0].x) / 2;
+            ctx.save();
+            ctx.font = '600 12px Inter';
+            ctx.fillStyle = 'rgba(80, 255, 176, 0.6)';
+            ctx.textAlign = 'center';
+            ctx.fillText('W2 @ + b2', x2, h - 25);
+            ctx.font = '500 10px Inter';
+            ctx.fillStyle = 'rgba(80, 255, 176, 0.4)';
+            ctx.fillText('→ softmax()', x2, h - 10);
+            ctx.restore();
+        }
+
+        function animate() {
+            const w = canvas.width / dpr;
+            const h = canvas.height / dpr;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            time += 0.016;
+
+            drawConnections();
+
+            if (animMode === 'flow' || animMode === 'both') {
+                spawnParticles();
+                drawParticles();
+            }
+
+            drawNodes();
+            drawActivationLabels();
+
+            // Highlighted path timer
+            if (highlightedPath && highlightTimer > 0) {
+                highlightTimer -= 0.016;
+                if (highlightTimer <= 0) {
+                    highlightedPath = null;
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function toggleAnimation(btn, mode) {
+            animMode = mode;
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function highlightPath() {
+            // Pick random path from input to output
+            const inputNodes = nodes[0].filter(n => !n.isGap);
+            const hiddenNodes = nodes[1].filter(n => !n.isGap);
+            const outputNodes = nodes[2].filter(n => !n.isGap);
+
+            const fromInput = inputNodes[Math.floor(Math.random() * inputNodes.length)];
+            const throughHidden = hiddenNodes[Math.floor(Math.random() * hiddenNodes.length)];
+            const toOutput = outputNodes[Math.floor(Math.random() * outputNodes.length)];
+
+            highlightedPath = [
+                { from: fromInput, to: throughHidden },
+                { from: throughHidden, to: toOutput }
+            ];
+            highlightTimer = 3;
+
+            // Spawn particles along path
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    particles.push(createParticle(fromInput, throughHidden));
+                    setTimeout(() => {
+                        particles.push(createParticle(throughHidden, toOutput));
+                    }, 400);
+                }, i * 200);
+            }
+        }
+
+        // Fix particle drawing - replace with simpler lerp approach
+        function drawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.progress += p.speed;
+                
+                if (p.progress >= 1) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                const t = p.progress;
+                const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                
+                const startX = p.targetX - (p.targetX - p.x) * (1 / (1)); // just use original positions
+                const drawX = lerp(p.x, p.targetX, ease);
+                const drawY = lerp(p.y, p.targetY, ease);
+
+                // Glow
+                const gradient = ctx.createRadialGradient(drawX, drawY, 0, drawX, drawY, p.size * 4);
+                const alphaHex = Math.floor(p.opacity * 180).toString(16).padStart(2, '0');
+                gradient.addColorStop(0, p.color + alphaHex);
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(drawX - p.size * 4, drawY - p.size * 4, p.size * 8, p.size * 8);
+
+                // Core
+                ctx.beginPath();
+                ctx.arc(drawX, drawY, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.opacity;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // Save original positions for particles
+        const origCreateParticle = createParticle;
+        
+        initNodes();
+        animate();
+    </script>
+</body>
+</html>
